@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>图层探查</title>
+    <script src="openlayers/build/ol.js"></script>
+    <link rel="stylesheet" href="openlayers/css/ol.css">
+    <style>
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+</body>
+<script>
+    var osm = new ol.layer.Tile({
+        preload: Infinity,
+        source: new ol.source.OSM(),
+        crossOrigin: 'anonymous'
+    })
+
+    var Bing = new ol.layer.Tile({
+        //启用瓦片预加载技术 preload 的默认为0 暨 不加载
+        preload: Infinity,
+        //地图源从OSM获取
+        // source: new ol.source.OSM()
+        source: new ol.source.BingMaps({
+            key: 'AryXWIiR87RM7jlpDoMlKHTwGz8kC5Nn8PuQnARKsitgCabGAmzRqRA-VdyZqItH',
+            // 设置Bing地图样式为卫星地图带标签
+            imagerySet: 'AerialWithLabels',
+            // 跨域 防止服务器之间读取地图时失败
+            crossOrigin: 'anonymous',
+        }),
+    });
+
+    // var vectorLayer = new ol.layer.Tile({
+    //     name: "天地图矢量图层",
+    //     source: new ol.source.XYZ({
+    //         url: "http://t0.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=c651bb5ff75193582552ca5ca317415f",
+    //     })
+    // });
+
+    var map = new ol.Map({
+        layers: [Bing, osm],
+        target: 'map',
+        view: new ol.View({
+            center: [0, 0],
+            zoom: 2
+        })
+    });
+
+
+    //探查半径
+    var radius = 75;
+    //添加键盘按下事件监听，用来控制探查范围的大小
+    document.addEventListener('keydown', function (e) {
+        if (e.keyCode == 38) {
+            radius = Math.min(radius + 5, 150);
+            map.render();
+            e.preventDefault();
+        } else if (e.keyCode == 40) {
+            radius = Math.max(radius - 5, 25);
+            map.render();  //渲染地图  重新刷新当前的地图容器
+            e.preventDefault();
+        }
+    });
+
+    // 实时得到鼠标的像素位置
+    var mousePosition = null;
+    var container = document.getElementById('map');
+    container.addEventListener('mousemove', function (event) {
+        mousePosition = map.getEventPixel(event);
+        map.render();
+    });
+
+    container.addEventListener('mouseout', function () {
+        mousePosition = null;
+        map.render();
+    });
+
+    // 在渲染层之前,做剪裁
+    osm.on('prerender', function (event) {
+        var ctx = event.context;
+        ctx.save();
+        ctx.beginPath();
+        if (mousePosition) {
+            // only show a circle around the mouse
+            var pixel = ol.render.getRenderPixel(event, mousePosition);
+            var offset = ol.render.getRenderPixel(event, [mousePosition[0] + radius, mousePosition[1]]);
+            var canvasRadius = Math.sqrt(Math.pow(offset[0] - pixel[0], 2) + Math.pow(offset[1] - pixel[1], 2));
+            ctx.arc(pixel[0], pixel[1], canvasRadius, 0, 2 * Math.PI);
+            ctx.lineWidth = 5 * canvasRadius / radius;
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.stroke();
+        }
+        ctx.clip();
+    });
+
+    // 呈现层后,恢复画布的背景
+    osm.on('postrender', function (event) {
+        var ctx = event.context;
+        ctx.restore();
+    });
+</script>
+
+</html>

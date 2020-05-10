@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>滑块</title>
+	<!-- 同一套代码换个电脑就没用 问题？？ -->
+	<script src="./openlayers/build/ol.js" type="text/javascript" charset="utf-8"></script>
+	<link rel="stylesheet" type="text/css" href="./openlayers/css/ol.css" />
+
+</head>
+
+<body>
+	<input type="range" id="swipe" style="width: 100%;">
+	<div id="map" class="map" style="width: 100%; height: 600px;"></div>
+
+	<script type="text/javascript" async>
+
+		var osm = new ol.layer.Tile({
+			source: new ol.source.OSM()
+		});
+
+		var TiandiMap = new ol.layer.Tile({
+			name: "天地图影像图层",
+			source: new ol.source.XYZ({
+				url: "http://t0.tianditu.com/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=c651bb5ff75193582552ca5ca317415f"
+			})
+		});
+
+		
+		var map = new ol.Map({
+			layers: [osm, TiandiMap],
+			target: 'map',
+			view: new ol.View({
+				center: [0, 0],
+				zoom: 2
+			})
+		});
+
+		var swipe = document.querySelector('#swipe');
+
+		TiandiMap.on("prerender", function (event) {
+			var ctx = event.context;
+			var width = ctx.canvas.width * (swipe.value / 100);
+
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(width, 0, ctx.canvas.width - width, ctx.canvas.height);
+			ctx.clip();
+		});
+
+		TiandiMap.on("postrender", function (event) {
+			var ctx = event.context;
+			ctx.restore();
+		});
+
+		swipe.addEventListener("input", function () {
+			map.render();
+		}, false);
+
+	</script>
+
+</body>
+
+</html>
