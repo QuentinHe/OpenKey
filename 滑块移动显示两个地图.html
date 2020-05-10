@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>滑块</title>
-	<!-- 同一套代码换个电脑就没用 问题？？ -->
+	<!-- 同一套代码换个电脑就没用 问题？？ //2020.5.10 与on添加的事件有关 需要采用prerender和postrender 之前都是precompose 和 postcompose-->  
 	<script src="./openlayers/build/ol.js" type="text/javascript" charset="utf-8"></script>
 	<link rel="stylesheet" type="text/css" href="./openlayers/css/ol.css" />
 
@@ -23,7 +23,7 @@
 		var TiandiMap = new ol.layer.Tile({
 			name: "天地图影像图层",
 			source: new ol.source.XYZ({
-				url: "http://t0.tianditu.com/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=c651bb5ff75193582552ca5ca317415f"
+				url: "http://t0.tianditu.com/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=" + yourTaken
 			})
 		});
 
@@ -39,14 +39,14 @@
 
 		var swipe = document.querySelector('#swipe');
 
-		TiandiMap.on("prerender", function (event) {
-			var ctx = event.context;
-			var width = ctx.canvas.width * (swipe.value / 100);
+		TiandiMap.on("prerender", function (event) {  //重点事件的采用  prerender
+			var ctx = event.context;   // 取得canvas的上下文对象
+			var width = ctx.canvas.width * (swipe.value / 100);  // 根据swipe设置canvas的宽度
 
 			ctx.save();
 			ctx.beginPath();
 			ctx.rect(width, 0, ctx.canvas.width - width, ctx.canvas.height);
-			ctx.clip();
+			ctx.clip(); 
 		});
 
 		TiandiMap.on("postrender", function (event) {
